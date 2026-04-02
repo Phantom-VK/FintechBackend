@@ -1,3 +1,5 @@
+"""FastAPI application entrypoint."""
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,7 +13,9 @@ from app.routers.utils import router as utils_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
+    """Create database tables when the app starts."""
+
     Base.metadata.create_all(bind=engine)
     yield
 

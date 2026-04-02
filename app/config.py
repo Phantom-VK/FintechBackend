@@ -1,3 +1,5 @@
+"""Application configuration values."""
+
 APP_TITLE = "Finance Data Processing and Access Control Backend"
 APP_VERSION = "0.1.0"
 

@@ -1,3 +1,5 @@
+"""Authentication routes."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -19,6 +21,8 @@ def register_user(
     user_data: UserCreate,
     db: Annotated[Session, Depends(get_db)],
 ) -> User:
+    """Register a new user."""
+
     existing_username = db.scalar(
         select(User).where(
             User.username == user_data.username,
@@ -26,7 +30,10 @@ def register_user(
         )
     )
     if existing_username is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists",
+        )
 
     existing_email = db.scalar(
         select(User).where(
@@ -35,7 +42,10 @@ def register_user(
         )
     )
     if existing_email is not None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already exists",
+        )
 
     first_user = db.scalar(select(User).where(User.is_deleted.is_(False)).limit(1))
     role = UserRole.ADMIN if first_user is None else UserRole.VIEWER
@@ -57,6 +67,8 @@ def login_user(
     credentials: UserLogin,
     db: Annotated[Session, Depends(get_db)],
 ) -> Token:
+    """Log in a user and return a bearer token."""
+
     user = db.scalar(
         select(User).where(
             User.username == credentials.username,
@@ -83,4 +95,6 @@ def login_user(
 def get_logged_in_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
+    """Return the current authenticated user."""
+
     return current_user

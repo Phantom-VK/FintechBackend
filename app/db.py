@@ -1,3 +1,5 @@
+"""Database setup and session helpers."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -5,18 +7,20 @@ from app.config import DATABASE_URL
 
 
 class Base(DeclarativeBase):
-    pass
+    """Base class for all SQLAlchemy models."""
 
 
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
 )
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+session_local = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 def get_db():
-    db = SessionLocal()
+    """Provide a database session for request handlers."""
+
+    db = session_local()
     try:
         yield db
     finally:

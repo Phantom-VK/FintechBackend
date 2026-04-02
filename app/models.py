@@ -1,3 +1,5 @@
+"""Database models for users and financial records."""
+
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
@@ -9,17 +11,23 @@ from app.db import Base
 
 
 class UserRole(str, Enum):
+    """Supported roles for API access control."""
+
     VIEWER = "viewer"
     ANALYST = "analyst"
     ADMIN = "admin"
 
 
 class RecordType(str, Enum):
+    """Supported financial record types."""
+
     INCOME = "income"
     EXPENSE = "expense"
 
 
 class User(Base):
+    """Database model for application users."""
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -38,6 +46,8 @@ class User(Base):
 
 
 class FinancialRecord(Base):
+    """Database model for income and expense records."""
+
     __tablename__ = "financial_records"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

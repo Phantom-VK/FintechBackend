@@ -1,3 +1,5 @@
+"""User management routes."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -18,6 +20,8 @@ def list_users(
     db: Annotated[Session, Depends(get_db)],
     _current_user: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
 ) -> list[User]:
+    """Return all non-deleted users."""
+
     users = db.scalars(
         select(User).where(User.is_deleted.is_(False)).order_by(User.id)
     ).all()
@@ -31,6 +35,8 @@ def update_user_status(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
 ) -> User:
+    """Activate or deactivate a user."""
+
     user = db.get(User, user_id)
     if user is None or user.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
