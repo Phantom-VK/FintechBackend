@@ -9,16 +9,31 @@ from app.models import RecordType, UserRole
 class UserBase(BaseModel):
     username: str
     email: str
-    role: UserRole = UserRole.VIEWER
 
 
 class UserCreate(UserBase):
     password: str = Field(min_length=6)
 
 
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
+
+
 class UserOut(UserBase):
     id: int
+    role: UserRole
     is_active: bool
+    is_deleted: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
