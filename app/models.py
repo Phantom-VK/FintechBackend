@@ -33,7 +33,7 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     records: Mapped[list["FinancialRecord"]] = relationship(back_populates="user")
 
 
