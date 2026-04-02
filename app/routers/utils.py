@@ -1,3 +1,5 @@
+"""Utility routes."""
+
 from pathlib import Path
 
 from fastapi import APIRouter
@@ -11,4 +13,6 @@ FAVICON_PATH = BASE_DIR / "static" / "favicon.ico"
 
 @router.get("/favicon.ico", include_in_schema=False)
 def favicon():
+    """Serve the favicon file."""
+
     return FileResponse(FAVICON_PATH)
