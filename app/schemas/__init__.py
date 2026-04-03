@@ -1,5 +1,11 @@
 """Schema package."""
 
+from app.schemas.dashboard import (
+    CategoryTotalOut,
+    DashboardSummaryOut,
+    DashboardTrendOut,
+    RecentActivityOut,
+)
 from app.schemas.transaction import (
     FinancialRecordBase,
     FinancialRecordCreate,
@@ -16,6 +22,9 @@ from app.schemas.transaction import (
 from app.schemas.user import Token, UserBase, UserCreate, UserLogin, UserOut, UserStatusUpdate
 
 __all__ = [
+    "CategoryTotalOut",
+    "DashboardSummaryOut",
+    "DashboardTrendOut",
     "FinancialRecordBase",
     "FinancialRecordCreate",
     "FinancialRecordFilters",
@@ -23,6 +32,7 @@ __all__ = [
     "FinancialRecordListOut",
     "FinancialRecordOut",
     "FinancialRecordUpdate",
+    "RecentActivityOut",
     "SortOrder",
     "Token",
     "TransactionSortField",
