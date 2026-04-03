@@ -3,6 +3,7 @@
 from app.schemas.transaction import (
     FinancialRecordBase,
     FinancialRecordCreate,
+    FinancialRecordFilters,
     FinancialRecordOut,
     FinancialRecordUpdate,
 )
@@ -11,6 +12,7 @@ from app.schemas.user import Token, UserBase, UserCreate, UserLogin, UserOut, Us
 __all__ = [
     "FinancialRecordBase",
     "FinancialRecordCreate",
+    "FinancialRecordFilters",
     "FinancialRecordOut",
     "FinancialRecordUpdate",
     "Token",

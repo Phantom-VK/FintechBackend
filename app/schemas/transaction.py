@@ -3,6 +3,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
+from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.transaction import RecordType
@@ -30,6 +31,22 @@ class FinancialRecordUpdate(BaseModel):
     category: str | None = None
     record_date: date | None = None
     description: str | None = None
+
+
+class FinancialRecordFilters:
+    """Simple query filter container for listing records."""
+
+    def __init__(
+        self,
+        record_type: RecordType | None = None,
+        category: str | None = None,
+        date_from: date | None = Query(default=None),
+        date_to: date | None = Query(default=None),
+    ) -> None:
+        self.record_type = record_type
+        self.category = category
+        self.date_from = date_from
+        self.date_to = date_to
 
 
 class FinancialRecordOut(FinancialRecordBase):
