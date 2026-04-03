@@ -3,7 +3,7 @@
 import sys
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 import structlog
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from app.exceptions import BadRequestException, ResourceNotFoundException
 from app.models.transaction import FinancialRecord
 from app.models.user import User, UserRole
 from app.schemas.transaction import (
+    FinancialRecordBulkCreateOut,
     FinancialRecordCreate,
     FinancialRecordFilters,
     FinancialRecordListOptions,
@@ -24,6 +25,7 @@ from app.schemas.transaction import (
 )
 from app.services.transaction_service import (
     create_transaction,
+    create_transactions_bulk,
     get_transaction_by_id,
     list_transactions as list_transactions_service,
     soft_delete_transaction,
@@ -33,6 +35,35 @@ from app.services.transaction_service import (
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 logger = structlog.get_logger(__name__)
+
+
+@router.post(
+    "/bulk",
+    response_model=FinancialRecordBulkCreateOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_transactions_in_bulk(
+    transactions_data: Annotated[list[FinancialRecordCreate], Body(min_length=1)],
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+) -> FinancialRecordBulkCreateOut:
+    """Create multiple financial transactions in one request."""
+
+    logger.info(
+        "transactions_bulk_create_requested",
+        actor_user_id=current_user.id,
+        record_count=len(transactions_data),
+    )
+    transactions = create_transactions_bulk(db, transactions_data, current_user.id)
+    logger.info(
+        "transactions_bulk_create_completed",
+        actor_user_id=current_user.id,
+        record_count=len(transactions),
+    )
+    return FinancialRecordBulkCreateOut(
+        created_count=len(transactions),
+        items=transactions,
+    )
 
 
 @router.post("/", response_model=FinancialRecordOut, status_code=status.HTTP_201_CREATED)

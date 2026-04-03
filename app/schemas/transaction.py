@@ -132,3 +132,10 @@ class FinancialRecordListOut(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class FinancialRecordBulkCreateOut(BaseModel):
+    """Bulk create transaction response."""
+
+    created_count: int
+    items: list[FinancialRecordOut]

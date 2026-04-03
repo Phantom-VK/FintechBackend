@@ -8,6 +8,7 @@ from app.schemas.dashboard import (
 )
 from app.schemas.transaction import (
     FinancialRecordBase,
+    FinancialRecordBulkCreateOut,
     FinancialRecordCreate,
     FinancialRecordFilters,
     FinancialRecordListOptions,
@@ -20,12 +21,14 @@ from app.schemas.transaction import (
     get_financial_record_list_options,
 )
 from app.schemas.user import Token, UserBase, UserCreate, UserLogin, UserOut, UserStatusUpdate
+from app.schemas.user import UserUpdate
 
 __all__ = [
     "CategoryTotalOut",
     "DashboardSummaryOut",
     "DashboardTrendOut",
     "FinancialRecordBase",
+    "FinancialRecordBulkCreateOut",
     "FinancialRecordCreate",
     "FinancialRecordFilters",
     "FinancialRecordListOptions",
@@ -43,4 +46,5 @@ __all__ = [
     "UserLogin",
     "UserOut",
     "UserStatusUpdate",
+    "UserUpdate",
 ]
