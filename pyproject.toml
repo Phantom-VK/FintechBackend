@@ -5,7 +5,7 @@ description = "Finance data processing and access control backend"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115,<1.0",
-    "passlib[bcrypt]>=1.7,<2.0",
+    "passlib>=1.7,<2.0",
     "python-jose>=3.3,<4.0",
     "sqlalchemy>=2.0,<3.0",
     "structlog>=25.0,<26.0",
