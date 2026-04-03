@@ -1,12 +1,15 @@
 """Authentication routes."""
 
+import sys
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
+import structlog
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import get_current_user
+from app.exceptions import AuthenticationException, AuthorizationException, ConflictException
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserLogin, UserOut
 from app.services.auth_service import (
@@ -19,10 +22,11 @@ from app.services.auth_service import (
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = structlog.get_logger(__name__)
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register_user(
+async def register_user(
     user_data: UserCreate,
     db: Annotated[Session, Depends(get_db)],
 ) -> User:
@@ -30,23 +34,25 @@ def register_user(
 
     existing_username = get_user_by_username(db, user_data.username)
     if existing_username is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists",
-        )
+        logger.warning("user_registration_conflict", field="username")
+        raise ConflictException("Username already exists", sys)
 
     existing_email = get_user_by_email(db, user_data.email)
     if existing_email is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists",
-        )
+        logger.warning("user_registration_conflict", field="email")
+        raise ConflictException("Email already exists", sys)
 
-    return create_user(db, user_data)
+    user = create_user(db, user_data)
+    logger.info(
+        "user_registered",
+        user_id=user.id,
+        role=user.role.value,
+    )
+    return user
 
 
 @router.post("/login", response_model=Token)
-def login_user(
+async def login_user(
     credentials: UserLogin,
     db: Annotated[Session, Depends(get_db)],
 ) -> Token:
@@ -54,24 +60,26 @@ def login_user(
 
     user = authenticate_user(db, credentials.username, credentials.password)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-        )
+        logger.warning("login_failed")
+        raise AuthenticationException("Invalid username or password", sys)
 
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive users cannot log in",
-        )
+        logger.warning("inactive_user_login_blocked", user_id=user.id)
+        raise AuthorizationException("Inactive users cannot log in", sys)
 
+    logger.info("user_logged_in", user_id=user.id, role=user.role.value)
     return Token(access_token=create_user_token(user))
 
 
 @router.get("/me", response_model=UserOut)
-def get_logged_in_user(
+async def get_logged_in_user(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     """Return the current authenticated user."""
 
+    logger.info(
+        "current_user_requested",
+        user_id=current_user.id,
+        role=current_user.role.value,
+    )
     return current_user

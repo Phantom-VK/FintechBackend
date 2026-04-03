@@ -9,6 +9,8 @@ app/
   main.py
   config.py
   database.py
+  logging_config.py
+  middleware.py
   security.py
   models/
   schemas/
@@ -43,3 +45,7 @@ uv run uvicorn app.main:app --reload
 
 - The first registered user becomes `admin`.
 - Every user registered after that becomes `viewer`.
+- Requests return an `X-Request-ID` header for log correlation.
+- Logs are emitted as structured JSON and do not log passwords, tokens, or request bodies.
+- Logs are also written to timestamped files inside the local `logs/` folder.
+- App-specific exceptions are handled centrally and return safe error messages to clients.
