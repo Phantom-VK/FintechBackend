@@ -3,13 +3,17 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db import get_db
-from app.deps import require_roles
-from app.models import User, UserRole
-from app.schemas import UserOut, UserStatusUpdate
+from app.database import get_db
+from app.dependencies.auth import require_roles
+from app.models.user import User, UserRole
+from app.schemas.user import UserOut, UserStatusUpdate
+from app.services.auth_service import (
+    get_user_by_id,
+    list_users as list_all_users,
+    update_user_status as update_user_status_service,
+)
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -22,10 +26,7 @@ def list_users(
 ) -> list[User]:
     """Return all non-deleted users."""
 
-    users = db.scalars(
-        select(User).where(User.is_deleted.is_(False)).order_by(User.id)
-    ).all()
-    return list(users)
+    return list_all_users(db)
 
 
 @router.patch("/{user_id}/status", response_model=UserOut)
@@ -37,7 +38,7 @@ def update_user_status(
 ) -> User:
     """Activate or deactivate a user."""
 
-    user = db.get(User, user_id)
+    user = get_user_by_id(db, user_id)
     if user is None or user.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -47,7 +48,4 @@ def update_user_status(
             detail="You cannot deactivate your own account",
         )
 
-    user.is_active = status_data.is_active
-    db.commit()
-    db.refresh(user)
-    return user
+    return update_user_status_service(db, user, status_data.is_active)

@@ -3,14 +3,19 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import create_access_token, hash_password, verify_password
-from app.db import get_db
-from app.deps import get_current_user
-from app.models import User, UserRole
-from app.schemas import Token, UserCreate, UserLogin, UserOut
+from app.database import get_db
+from app.dependencies.auth import get_current_user
+from app.models.user import User
+from app.schemas.user import Token, UserCreate, UserLogin, UserOut
+from app.services.auth_service import (
+    authenticate_user,
+    create_user,
+    create_user_token,
+    get_user_by_email,
+    get_user_by_username,
+)
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -23,43 +28,21 @@ def register_user(
 ) -> User:
     """Register a new user."""
 
-    existing_username = db.scalar(
-        select(User).where(
-            User.username == user_data.username,
-            User.is_deleted.is_(False),
-        )
-    )
+    existing_username = get_user_by_username(db, user_data.username)
     if existing_username is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already exists",
         )
 
-    existing_email = db.scalar(
-        select(User).where(
-            User.email == user_data.email,
-            User.is_deleted.is_(False),
-        )
-    )
+    existing_email = get_user_by_email(db, user_data.email)
     if existing_email is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already exists",
         )
 
-    first_user = db.scalar(select(User).where(User.is_deleted.is_(False)).limit(1))
-    role = UserRole.ADMIN if first_user is None else UserRole.VIEWER
-
-    user = User(
-        username=user_data.username,
-        email=user_data.email,
-        hashed_password=hash_password(user_data.password),
-        role=role,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    return create_user(db, user_data)
 
 
 @router.post("/login", response_model=Token)
@@ -69,13 +52,8 @@ def login_user(
 ) -> Token:
     """Log in a user and return a bearer token."""
 
-    user = db.scalar(
-        select(User).where(
-            User.username == credentials.username,
-            User.is_deleted.is_(False),
-        )
-    )
-    if user is None or not verify_password(credentials.password, user.hashed_password):
+    user = authenticate_user(db, credentials.username, credentials.password)
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -87,8 +65,7 @@ def login_user(
             detail="Inactive users cannot log in",
         )
 
-    access_token = create_access_token(user.id)
-    return Token(access_token=access_token)
+    return Token(access_token=create_user_token(user))
 
 
 @router.get("/me", response_model=UserOut)

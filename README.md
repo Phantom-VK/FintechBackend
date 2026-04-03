@@ -2,6 +2,21 @@
 
 Simple FastAPI backend for the finance assignment.
 
+## Structure
+
+```text
+app/
+  main.py
+  config.py
+  database.py
+  security.py
+  models/
+  schemas/
+  routers/
+  services/
+  dependencies/
+```
+
 ## Setup
 
 ```bash

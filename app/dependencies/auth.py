@@ -7,9 +7,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.auth import decode_access_token
-from app.db import get_db
-from app.models import User, UserRole
+from app.database import get_db
+from app.models.user import User, UserRole
+from app.security import decode_access_token
+from app.services.auth_service import get_user_by_id
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -27,15 +28,14 @@ def get_current_user(
             detail="Authentication credentials were not provided",
         )
 
-    token = credentials.credentials
-    user_id = decode_access_token(token)
+    user_id = decode_access_token(credentials.credentials)
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
 
-    user = db.get(User, user_id)
+    user = get_user_by_id(db, user_id)
     if user is None or user.is_deleted:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
