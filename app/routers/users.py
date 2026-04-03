@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+import structlog
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -17,20 +18,27 @@ from app.services.auth_service import (
 
 
 router = APIRouter(prefix="/users", tags=["users"])
+logger = structlog.get_logger(__name__)
 
 
 @router.get("/", response_model=list[UserOut])
-def list_users(
+async def list_users(
     db: Annotated[Session, Depends(get_db)],
-    _current_user: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
+    current_user: Annotated[User, Depends(require_roles(UserRole.ADMIN))],
 ) -> list[User]:
     """Return all non-deleted users."""
 
-    return list_all_users(db)
+    users = list_all_users(db)
+    logger.info(
+        "users_listed",
+        actor_user_id=current_user.id,
+        user_count=len(users),
+    )
+    return users
 
 
 @router.patch("/{user_id}/status", response_model=UserOut)
-def update_user_status(
+async def update_user_status(
     user_id: int,
     status_data: UserStatusUpdate,
     db: Annotated[Session, Depends(get_db)],
@@ -40,12 +48,21 @@ def update_user_status(
 
     user = get_user_by_id(db, user_id)
     if user is None or user.is_deleted:
+        logger.warning("user_status_update_failed_not_found", actor_user_id=current_user.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     if user.id == current_user.id and not status_data.is_active:
+        logger.warning("self_deactivation_blocked", actor_user_id=current_user.id)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot deactivate your own account",
         )
 
-    return update_user_status_service(db, user, status_data.is_active)
+    updated_user = update_user_status_service(db, user, status_data.is_active)
+    logger.info(
+        "user_status_updated",
+        actor_user_id=current_user.id,
+        target_user_id=updated_user.id,
+        is_active=updated_user.is_active,
+    )
+    return updated_user

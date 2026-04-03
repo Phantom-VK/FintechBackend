@@ -213,3 +213,4 @@ pr.md
 .idea/
 .codex
 finance.db
+logs/
