@@ -48,3 +48,4 @@ uv run uvicorn app.main:app --reload
 - Requests return an `X-Request-ID` header for log correlation.
 - Logs are emitted as structured JSON and do not log passwords, tokens, or request bodies.
 - Logs are also written to timestamped files inside the local `logs/` folder.
+- App-specific exceptions are handled centrally and return safe error messages to clients.

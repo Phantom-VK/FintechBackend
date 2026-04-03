@@ -1,13 +1,15 @@
 """Authentication routes."""
 
+import sys
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 import structlog
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import get_current_user
+from app.exceptions import AuthenticationException, AuthorizationException, ConflictException
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserLogin, UserOut
 from app.services.auth_service import (
@@ -33,18 +35,12 @@ async def register_user(
     existing_username = get_user_by_username(db, user_data.username)
     if existing_username is not None:
         logger.warning("user_registration_conflict", field="username")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists",
-        )
+        raise ConflictException("Username already exists", sys)
 
     existing_email = get_user_by_email(db, user_data.email)
     if existing_email is not None:
         logger.warning("user_registration_conflict", field="email")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists",
-        )
+        raise ConflictException("Email already exists", sys)
 
     user = create_user(db, user_data)
     logger.info(
@@ -65,17 +61,11 @@ async def login_user(
     user = authenticate_user(db, credentials.username, credentials.password)
     if user is None:
         logger.warning("login_failed")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-        )
+        raise AuthenticationException("Invalid username or password", sys)
 
     if not user.is_active:
         logger.warning("inactive_user_login_blocked", user_id=user.id)
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive users cannot log in",
-        )
+        raise AuthorizationException("Inactive users cannot log in", sys)
 
     logger.info("user_logged_in", user_id=user.id, role=user.role.value)
     return Token(access_token=create_user_token(user))

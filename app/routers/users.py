@@ -1,13 +1,15 @@
 """User management routes."""
 
+import sys
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 import structlog
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import require_roles
+from app.exceptions import BadRequestException, ResourceNotFoundException
 from app.models.user import User, UserRole
 from app.schemas.user import UserOut, UserStatusUpdate
 from app.services.auth_service import (
@@ -49,14 +51,11 @@ async def update_user_status(
     user = get_user_by_id(db, user_id)
     if user is None or user.is_deleted:
         logger.warning("user_status_update_failed_not_found", actor_user_id=current_user.id)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise ResourceNotFoundException("User not found", sys)
 
     if user.id == current_user.id and not status_data.is_active:
         logger.warning("self_deactivation_blocked", actor_user_id=current_user.id)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot deactivate your own account",
-        )
+        raise BadRequestException("You cannot deactivate your own account", sys)
 
     updated_user = update_user_status_service(db, user, status_data.is_active)
     logger.info(
