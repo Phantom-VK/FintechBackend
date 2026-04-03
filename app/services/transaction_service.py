@@ -1,6 +1,5 @@
 """Thin service functions for transaction features."""
 
-from datetime import date
 import sys
 
 from sqlalchemy import select
@@ -8,8 +7,15 @@ from sqlalchemy.orm import Session
 import structlog
 
 from app.exceptions import FintechBackendException
-from app.models.transaction import FinancialRecord, RecordType
-from app.schemas.transaction import FinancialRecordCreate, FinancialRecordUpdate
+from app.models.transaction import FinancialRecord
+from app.schemas.transaction import (
+    FinancialRecordCreate,
+    FinancialRecordFilters,
+    FinancialRecordListOptions,
+    FinancialRecordUpdate,
+    SortOrder,
+    TransactionSortField,
+)
 
 
 logger = structlog.get_logger(__name__)
@@ -75,40 +81,65 @@ def get_transaction_by_id(
 
 def list_transactions(
     db: Session,
-    record_type: RecordType | None = None,
-    category: str | None = None,
-    date_from: date | None = None,
-    date_to: date | None = None,
-) -> list[FinancialRecord]:
-    """Return non-deleted financial records with simple filters."""
+    filters: FinancialRecordFilters,
+    list_options: FinancialRecordListOptions,
+) -> tuple[list[FinancialRecord], int]:
+    """Return non-deleted financial records with filters, pagination, and sorting."""
 
     logger.info(
         "transactions_list_requested",
-        record_type=record_type.value if record_type else None,
-        category=category,
-        date_from=date_from.isoformat() if date_from else None,
-        date_to=date_to.isoformat() if date_to else None,
+        record_type=filters.record_type.value if filters.record_type else None,
+        category=filters.category,
+        date_from=filters.date_from.isoformat() if filters.date_from else None,
+        date_to=filters.date_to.isoformat() if filters.date_to else None,
+        page=list_options.page,
+        limit=list_options.limit,
+        sort_by=list_options.sort_by.value,
+        sort_order=list_options.sort_order.value,
     )
     query = select(FinancialRecord).where(FinancialRecord.is_deleted.is_(False))
+    count_query = select(FinancialRecord.id).where(FinancialRecord.is_deleted.is_(False))
 
-    if record_type is not None:
-        query = query.where(FinancialRecord.record_type == record_type)
+    if filters.record_type is not None:
+        query = query.where(FinancialRecord.record_type == filters.record_type)
+        count_query = count_query.where(FinancialRecord.record_type == filters.record_type)
 
-    if category:
-        query = query.where(FinancialRecord.category == category)
+    if filters.category:
+        query = query.where(FinancialRecord.category == filters.category)
+        count_query = count_query.where(FinancialRecord.category == filters.category)
 
-    if date_from is not None:
-        query = query.where(FinancialRecord.record_date >= date_from)
+    if filters.date_from is not None:
+        query = query.where(FinancialRecord.record_date >= filters.date_from)
+        count_query = count_query.where(FinancialRecord.record_date >= filters.date_from)
 
-    if date_to is not None:
-        query = query.where(FinancialRecord.record_date <= date_to)
+    if filters.date_to is not None:
+        query = query.where(FinancialRecord.record_date <= filters.date_to)
+        count_query = count_query.where(FinancialRecord.record_date <= filters.date_to)
 
+    total = len(db.scalars(count_query).all())
+
+    sort_column = FinancialRecord.record_date
+    if list_options.sort_by == TransactionSortField.AMOUNT:
+        sort_column = FinancialRecord.amount
+    elif list_options.sort_by == TransactionSortField.CREATED_AT:
+        sort_column = FinancialRecord.created_at
+
+    if list_options.sort_order == SortOrder.ASC:
+        query = query.order_by(sort_column.asc(), FinancialRecord.id.asc())
+    else:
+        query = query.order_by(sort_column.desc(), FinancialRecord.id.desc())
+
+    offset = (list_options.page - 1) * list_options.limit
     transactions = db.scalars(
-        query.order_by(FinancialRecord.record_date.desc(), FinancialRecord.id.desc())
+        query.offset(offset).limit(list_options.limit)
     ).all()
     transaction_list = list(transactions)
-    logger.info("transactions_list_succeeded", transaction_count=len(transaction_list))
-    return transaction_list
+    logger.info(
+        "transactions_list_succeeded",
+        transaction_count=len(transaction_list),
+        total=total,
+    )
+    return transaction_list, total
 
 
 def update_transaction(

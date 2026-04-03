@@ -15,8 +15,12 @@ from app.models.user import User, UserRole
 from app.schemas.transaction import (
     FinancialRecordCreate,
     FinancialRecordFilters,
+    FinancialRecordListOptions,
+    FinancialRecordListOut,
     FinancialRecordOut,
     FinancialRecordUpdate,
+    get_financial_record_filters,
+    get_financial_record_list_options,
 )
 from app.services.transaction_service import (
     create_transaction,
@@ -48,15 +52,19 @@ async def create_transaction_record(
     return create_transaction(db, transaction_data, current_user.id)
 
 
-@router.get("/", response_model=list[FinancialRecordOut])
+@router.get("/", response_model=FinancialRecordListOut)
 async def list_transactions(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[
         User,
         Depends(require_roles(UserRole.ADMIN, UserRole.ANALYST, UserRole.VIEWER)),
     ],
-    filters: Annotated[FinancialRecordFilters, Depends()],
-) -> list[FinancialRecord]:
+    filters: Annotated[FinancialRecordFilters, Depends(get_financial_record_filters)],
+    list_options: Annotated[
+        FinancialRecordListOptions,
+        Depends(get_financial_record_list_options),
+    ],
+) -> FinancialRecordListOut:
     """List financial transactions with simple filters."""
 
     logger.info(
@@ -75,12 +83,24 @@ async def list_transactions(
         )
         raise BadRequestException("date_from cannot be greater than date_to", sys)
 
-    return list_transactions_service(
+    items, total = list_transactions_service(
         db=db,
-        record_type=filters.record_type,
-        category=filters.category,
-        date_from=filters.date_from,
-        date_to=filters.date_to,
+        filters=filters,
+        list_options=list_options,
+    )
+    logger.info(
+        "transactions_list_route_completed",
+        actor_user_id=current_user.id,
+        returned_count=len(items),
+        total=total,
+        page=list_options.page,
+        limit=list_options.limit,
+    )
+    return FinancialRecordListOut(
+        items=items,
+        total=total,
+        page=list_options.page,
+        limit=list_options.limit,
     )
 
 
