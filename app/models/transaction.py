@@ -24,7 +24,16 @@ class FinancialRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    record_type: Mapped[RecordType] = mapped_column(SqlEnum(RecordType), nullable=False)
+    record_type: Mapped[RecordType] = mapped_column(
+        SqlEnum(
+            RecordType,
+            values_callable=lambda record_types: [
+                record_type.value for record_type in record_types
+            ],
+            native_enum=False,
+        ),
+        nullable=False,
+    )
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     record_date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

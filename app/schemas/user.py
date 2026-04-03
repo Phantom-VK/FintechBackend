@@ -40,6 +40,14 @@ class UserStatusUpdate(BaseModel):
     is_active: bool
 
 
+class UserUpdate(BaseModel):
+    """Payload for updating user details."""
+
+    username: str | None = None
+    email: str | None = None
+    role: UserRole | None = None
+
+
 class UserOut(UserBase):
     """User response model."""
 

@@ -64,6 +64,52 @@ def create_transaction(
     return transaction
 
 
+def create_transactions_bulk(
+    db: Session,
+    transactions_data: list[FinancialRecordCreate],
+    created_by: int,
+) -> list[FinancialRecord]:
+    """Create multiple financial records in a single request."""
+
+    logger.info(
+        "transactions_bulk_create_started",
+        actor_user_id=created_by,
+        record_count=len(transactions_data),
+    )
+    transactions = [
+        FinancialRecord(
+            amount=transaction_data.amount,
+            record_type=transaction_data.record_type,
+            category=transaction_data.category,
+            record_date=transaction_data.record_date,
+            description=transaction_data.description,
+            created_by=created_by,
+        )
+        for transaction_data in transactions_data
+    ]
+
+    try:
+        db.add_all(transactions)
+        db.commit()
+        for transaction in transactions:
+            db.refresh(transaction)
+    except Exception as exc:
+        db.rollback()
+        logger.exception(
+            "transactions_bulk_create_failed",
+            actor_user_id=created_by,
+            error=str(exc),
+        )
+        raise FintechBackendException("Unable to create transactions in bulk", sys) from exc
+
+    logger.info(
+        "transactions_bulk_create_succeeded",
+        actor_user_id=created_by,
+        record_count=len(transactions),
+    )
+    return transactions
+
+
 def get_transaction_by_id(
     db: Session,
     transaction_id: int,
