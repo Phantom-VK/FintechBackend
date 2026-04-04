@@ -2,6 +2,11 @@
 
 Main router registration happens in [app/main.py](../app/main.py).
 
+Base URLs:
+
+- Local: `http://127.0.0.1:8000`
+- Current AWS deployment: `http://13.233.155.129:8000`
+
 ## Health
 
 Source file: [app/routers/health.py](../app/routers/health.py)
@@ -19,6 +24,8 @@ Source file: [app/routers/auth.py](../app/routers/auth.py)
   - creates a new user
   - first registered user becomes `admin`
   - later users default to `viewer`
+  - `role` is not accepted in the register payload
+  - `analyst` cannot be created directly through self-registration
 - `POST /auth/login`
   - returns a bearer token
 - `GET /auth/me`
@@ -33,6 +40,13 @@ Register request body:
   "password": "secret123"
 }
 ```
+
+Deployment note:
+
+- On the current AWS deployment, we have not pre-created any user
+- The first successful `POST /auth/register` there will become `admin`
+- Every later self-registered user there will become `viewer`
+- `analyst` still must be assigned later by an `admin`
 
 Login request body:
 
@@ -53,6 +67,7 @@ All user routes are admin-only.
   - returns all non-deleted users
 - `PATCH /users/{user_id}`
   - partial update for `username`, `email`, and `role`
+  - `analyst` role assignment happens here, by `admin` only
 - `PATCH /users/{user_id}/status`
   - activate or deactivate a user
 - `DELETE /users/{user_id}`

@@ -21,12 +21,32 @@ uv run uvicorn app.main:app --reload
 
 Application entrypoint: [app/main.py](../app/main.py)
 
+## Initial User Bootstrap
+
+Registration behavior is implemented in [app/services/auth_service.py](../app/services/auth_service.py).
+
+- The first registered user becomes `admin`
+- Every later self-registered user becomes `viewer`
+- `analyst` is not accepted during normal registration
+- `analyst` can only be assigned later by an `admin` through [app/routers/users.py](../app/routers/users.py)
+
+This also applies to the deployed AWS instance.
+
+- No user has been pre-created by us there
+- The first successful registration on the deployed app will become `admin`
+
 ## Open the Backend
 
 - Swagger UI: `http://127.0.0.1:8000/docs`
 - OpenAPI JSON: `http://127.0.0.1:8000/openapi.json`
 - Root route: `http://127.0.0.1:8000/`
 - Health route: `http://127.0.0.1:8000/health`
+
+Current deployed instance:
+
+- Base URL: `http://13.233.155.129:8000`
+- Swagger UI: `http://13.233.155.129:8000/docs`
+- Health route: `http://13.233.155.129:8000/health`
 
 Health routes are defined in [app/routers/health.py](../app/routers/health.py).
 

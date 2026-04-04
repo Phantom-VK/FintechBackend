@@ -27,15 +27,26 @@ The backend supports:
   - can manage users
   - can create, update, delete, and bulk create transactions
   - can read dashboard data
+  - is created automatically for the first registered user
 - `analyst`
   - can read transactions
   - can read dashboard data
+  - can only be assigned by an `admin`
 - `viewer`
   - can read transactions
   - can read dashboard data
   - cannot create or modify transactions
+  - is the default role for every self-registered user after the first one
 
 Role definitions live in [app/models/user.py](../app/models/user.py).
+
+Role assignment and first-user bootstrap logic live in [app/services/auth_service.py](../app/services/auth_service.py).
+
+Current deployed instance:
+
+- Base URL: `http://13.233.155.129:8000`
+- No user has been pre-created by us there
+- The first successful registration there becomes `admin`
 
 ## Backend Structure
 
