@@ -183,8 +183,20 @@ Accessible to `admin`, `analyst`, and `viewer`.
   - net balance
   - category totals
   - recent activity
+- `GET /dashboard/totals`
+  - total income
+  - total expenses
+  - net balance
+- `GET /dashboard/category-totals`
+  - category-wise totals for widget views
+- `GET /dashboard/recent-activity`
+  - recent transactions
+  - query param: `limit`
 - `GET /dashboard/trends`
-  - monthly income, expense, and net trend data
+  - monthly or weekly income, expense, and net trend data
+  - query param: `group_by`
+    - `monthly`
+    - `weekly`
 
 ## Schemas
 

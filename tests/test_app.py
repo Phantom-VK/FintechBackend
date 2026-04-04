@@ -12,9 +12,16 @@ from app.dependencies.auth import require_roles
 from app.exceptions import AuthorizationException
 from app.models.user import UserRole
 from app.routers.auth import get_logged_in_user, login_user, register_user
-from app.routers.dashboard import get_dashboard_summary, get_dashboard_trends
+from app.routers.dashboard import (
+    get_dashboard_category_totals,
+    get_dashboard_summary,
+    get_dashboard_totals,
+    get_dashboard_trends,
+    get_recent_activity,
+)
 from app.routers.transactions import create_transactions_in_bulk, list_transactions
 from app.routers.users import delete_user, list_users, update_user_details
+from app.schemas.dashboard import TrendGroupBy
 from app.schemas.transaction import (
     FinancialRecordCreate,
     FinancialRecordFilters,
@@ -186,7 +193,7 @@ class BackendTestCase(unittest.IsolatedAsyncioTestCase):
             ["250.00", "600.00"],
         )
 
-    async def test_dashboard_summary_and_trends_return_expected_totals(self):
+    async def test_dashboard_summary_and_enhanced_routes_return_expected_totals(self):
         """Dashboard routes should aggregate transaction data correctly."""
 
         admin_user = await self.register("admin1", "admin1@example.com")
@@ -224,16 +231,46 @@ class BackendTestCase(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
+        totals = await get_dashboard_totals(self.db, admin_user)
+        category_totals = await get_dashboard_category_totals(self.db, admin_user)
+        recent_activity = await get_recent_activity(self.db, admin_user, limit=2)
         summary = await get_dashboard_summary(self.db, admin_user)
-        trends = await get_dashboard_trends(self.db, admin_user)
+        monthly_trends = await get_dashboard_trends(
+            self.db,
+            admin_user,
+            group_by=TrendGroupBy.MONTHLY,
+        )
+        weekly_trends = await get_dashboard_trends(
+            self.db,
+            admin_user,
+            group_by=TrendGroupBy.WEEKLY,
+        )
 
+        self.assertEqual(str(totals.total_income), "5600.00")
+        self.assertEqual(str(totals.total_expenses), "1000.00")
+        self.assertEqual(str(totals.net_balance), "4600.00")
         self.assertEqual(str(summary.total_income), "5600.00")
         self.assertEqual(str(summary.total_expenses), "1000.00")
         self.assertEqual(str(summary.net_balance), "4600.00")
         self.assertEqual(len(summary.recent_activity), 4)
+        self.assertEqual(len(recent_activity), 2)
+        self.assertEqual(recent_activity[0].category, "food")
         self.assertEqual(
-            [(item.period, str(item.net_balance)) for item in trends],
+            [(item.category, str(item.total)) for item in category_totals],
+            [
+                ("salary", "5000.00"),
+                ("rent", "800.00"),
+                ("freelance", "600.00"),
+                ("food", "200.00"),
+            ],
+        )
+        self.assertEqual(
+            [(item.period, str(item.net_balance)) for item in monthly_trends],
             [("2026-01", "4200.00"), ("2026-02", "400.00")],
+        )
+        self.assertEqual(
+            [(item.period, str(item.net_balance)) for item in weekly_trends],
+            [("2026-W02", "4200.00"), ("2026-W06", "400.00")],
         )
 
     async def test_transaction_search_matches_category_and_description(self):
