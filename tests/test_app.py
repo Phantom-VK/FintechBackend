@@ -235,3 +235,112 @@ class BackendTestCase(unittest.IsolatedAsyncioTestCase):
             [(item.period, str(item.net_balance)) for item in trends],
             [("2026-01", "4200.00"), ("2026-02", "400.00")],
         )
+
+    async def test_transaction_search_matches_category_and_description(self):
+        """Search should match category and description and respect soft delete."""
+
+        admin_user = await self.register("admin1", "admin1@example.com")
+        bulk_result = await self.bulk_create_transactions(
+            admin_user,
+            [
+                {
+                    "amount": 200,
+                    "record_type": "expense",
+                    "category": "food",
+                    "record_date": "2026-03-01",
+                    "description": "Lunch with client",
+                },
+                {
+                    "amount": 150,
+                    "record_type": "expense",
+                    "category": "travel",
+                    "record_date": "2026-03-02",
+                    "description": "Food delivery during travel",
+                },
+                {
+                    "amount": 3000,
+                    "record_type": "income",
+                    "category": "salary",
+                    "record_date": "2026-03-03",
+                    "description": "Monthly payroll",
+                },
+            ],
+        )
+
+        search_by_category = await list_transactions(
+            self.db,
+            admin_user,
+            FinancialRecordFilters(search="food"),
+            FinancialRecordListOptions(),
+        )
+        search_by_description = await list_transactions(
+            self.db,
+            admin_user,
+            FinancialRecordFilters(search="payroll"),
+            FinancialRecordListOptions(),
+        )
+
+        self.assertEqual(bulk_result.created_count, 3)
+        self.assertEqual(search_by_category.total, 2)
+        self.assertEqual(
+            [item.category for item in search_by_category.items],
+            ["travel", "food"],
+        )
+        self.assertEqual(search_by_description.total, 1)
+        self.assertEqual(search_by_description.items[0].category, "salary")
+
+    async def test_transaction_search_works_with_sorting_and_trims_empty_input(self):
+        """Search should combine with sorting and ignore blank search values."""
+
+        admin_user = await self.register("admin1", "admin1@example.com")
+        await self.bulk_create_transactions(
+            admin_user,
+            [
+                {
+                    "amount": 450,
+                    "record_type": "expense",
+                    "category": "food",
+                    "record_date": "2026-04-01",
+                    "description": "Team dinner",
+                },
+                {
+                    "amount": 120,
+                    "record_type": "expense",
+                    "category": "office",
+                    "record_date": "2026-04-02",
+                    "description": "Dinner snacks",
+                },
+                {
+                    "amount": 800,
+                    "record_type": "expense",
+                    "category": "travel",
+                    "record_date": "2026-04-03",
+                    "description": "Flight booking",
+                },
+            ],
+        )
+
+        filtered_listing = await list_transactions(
+            self.db,
+            admin_user,
+            FinancialRecordFilters(search=" dinner "),
+            FinancialRecordListOptions(
+                page=1,
+                limit=10,
+                sort_by=TransactionSortField.AMOUNT,
+                sort_order=SortOrder.ASC,
+            ),
+        )
+        blank_search_listing = await list_transactions(
+            self.db,
+            admin_user,
+            FinancialRecordFilters(search=""),
+            FinancialRecordListOptions(),
+        )
+
+        self.assertEqual(filtered_listing.total, 2)
+        self.assertEqual(
+            [str(item.amount) for item in filtered_listing.items],
+            ["120.00", "450.00"],
+        )
+        self.assertEqual(blank_search_listing.total, 3)

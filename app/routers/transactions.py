@@ -102,6 +102,7 @@ async def list_transactions(
         "transactions_list_route_requested",
         actor_user_id=current_user.id,
         role=current_user.role.value,
+        search=filters.search,
     )
     if (
         filters.date_from is not None
