@@ -17,6 +17,7 @@ jobs:
 
     env:
       APP_DIRECTORY: ${{ github.workspace }}
+      APP_SERVICE_NAME: "fintechbackend"
       APP_PORT: "8000"
       APP_HOST: "0.0.0.0"
       APP_HEALTH_URL: "http://127.0.0.1:8000/health"
@@ -37,13 +38,13 @@ jobs:
         uses: ./.github/actions/prepare-fastapi-runtime
         with:
           app-directory: ${{ env.APP_DIRECTORY }}
-          pid-file: fastapi.pid
+          service-name: ${{ env.APP_SERVICE_NAME }}
 
       - name: Deploy FastAPI App
         uses: ./.github/actions/deploy-ec2
         with:
           app-directory: ${{ env.APP_DIRECTORY }}
-          pid-file: fastapi.pid
+          service-name: ${{ env.APP_SERVICE_NAME }}
           host: ${{ env.APP_HOST }}
           port: ${{ env.APP_PORT }}
           health-url: ${{ env.APP_HEALTH_URL }}
