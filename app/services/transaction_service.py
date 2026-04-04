@@ -2,7 +2,7 @@
 
 import sys
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 import structlog
 
@@ -136,6 +136,7 @@ def list_transactions(
         "transactions_list_requested",
         record_type=filters.record_type.value if filters.record_type else None,
         category=filters.category,
+        search=filters.search,
         date_from=filters.date_from.isoformat() if filters.date_from else None,
         date_to=filters.date_to.isoformat() if filters.date_to else None,
         page=list_options.page,
@@ -153,6 +154,15 @@ def list_transactions(
     if filters.category:
         query = query.where(FinancialRecord.category == filters.category)
         count_query = count_query.where(FinancialRecord.category == filters.category)
+
+    if filters.search:
+        search_pattern = f"%{filters.search}%"
+        search_clause = or_(
+            FinancialRecord.category.ilike(search_pattern),
+            FinancialRecord.description.ilike(search_pattern),
+        )
+        query = query.where(search_clause)
+        count_query = count_query.where(search_clause)
 
     if filters.date_from is not None:
         query = query.where(FinancialRecord.record_date >= filters.date_from)

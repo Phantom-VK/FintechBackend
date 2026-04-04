@@ -141,6 +141,7 @@ List query parameters:
 
 - `record_type`
 - `category`
+- `search`
 - `date_from`
 - `date_to`
 - `page`
@@ -158,6 +159,17 @@ Example:
 ```text
 GET /transactions/?category=food&page=1&limit=5&sort_by=amount&sort_order=asc
 ```
+
+Search example:
+
+```text
+GET /transactions/?search=food&page=1&limit=10
+```
+
+`search` performs a case-insensitive partial match against:
+
+- `category`
+- `description`
 
 ## Dashboard
 

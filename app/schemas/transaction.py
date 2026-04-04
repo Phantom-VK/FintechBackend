@@ -52,17 +52,32 @@ class FinancialRecordUpdate(BaseModel):
 class FinancialRecordFilters:
     """Simple filter container for listing records."""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         record_type: RecordType | None = None,
         category: str | None = None,
+        search: str | None = None,
         date_from: date | None = None,
         date_to: date | None = None,
     ) -> None:
         self.record_type = record_type
         self.category = category
+        self.search = self.normalize_search(search)
         self.date_from = date_from
         self.date_to = date_to
+
+    @staticmethod
+    def normalize_search(search: str | None) -> str | None:
+        """Trim search text and convert blank values to None."""
+
+        if search is None:
+            return None
+
+        stripped_search = search.strip()
+        if not stripped_search:
+            return None
+
+        return stripped_search
 
 
 class FinancialRecordListOptions:
@@ -84,6 +99,7 @@ class FinancialRecordListOptions:
 def get_financial_record_filters(
     record_type: RecordType | None = None,
     category: str | None = None,
+    search: str | None = Query(default=None),
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
 ) -> FinancialRecordFilters:
@@ -92,6 +108,7 @@ def get_financial_record_filters(
     return FinancialRecordFilters(
         record_type=record_type,
         category=category,
+        search=search,
         date_from=date_from,
         date_to=date_to,
     )
