@@ -2,6 +2,7 @@
 
 from datetime import date
 from decimal import Decimal
+from enum import Enum
 
 from pydantic import BaseModel
 
@@ -36,8 +37,23 @@ class DashboardSummaryOut(BaseModel):
     recent_activity: list[RecentActivityOut]
 
 
+class DashboardTotalsOut(BaseModel):
+    """Top-level totals for dashboard widgets."""
+
+    total_income: Decimal
+    total_expenses: Decimal
+    net_balance: Decimal
+
+
+class TrendGroupBy(str, Enum):
+    """Supported trend grouping values."""
+
+    MONTHLY = "monthly"
+    WEEKLY = "weekly"
+
+
 class DashboardTrendOut(BaseModel):
-    """Monthly trend point for the dashboard."""
+    """Trend point for the dashboard."""
 
     period: str
     income: Decimal

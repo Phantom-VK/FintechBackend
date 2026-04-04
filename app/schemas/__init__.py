@@ -3,8 +3,10 @@
 from app.schemas.dashboard import (
     CategoryTotalOut,
     DashboardSummaryOut,
+    DashboardTotalsOut,
     DashboardTrendOut,
     RecentActivityOut,
+    TrendGroupBy,
 )
 from app.schemas.transaction import (
     FinancialRecordBase,
@@ -26,6 +28,7 @@ from app.schemas.user import UserUpdate
 __all__ = [
     "CategoryTotalOut",
     "DashboardSummaryOut",
+    "DashboardTotalsOut",
     "DashboardTrendOut",
     "FinancialRecordBase",
     "FinancialRecordBulkCreateOut",
@@ -38,6 +41,7 @@ __all__ = [
     "RecentActivityOut",
     "SortOrder",
     "Token",
+    "TrendGroupBy",
     "TransactionSortField",
     "get_financial_record_filters",
     "get_financial_record_list_options",
