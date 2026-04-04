@@ -1,14 +1,14 @@
 name: "Deploy FastAPI to EC2"
-description: "Install dependencies and start the FastAPI app on a self-hosted EC2 runner"
+description: "Install dependencies and deploy the FastAPI app as a systemd service on EC2"
 inputs:
   app-directory:
     description: "Application directory on the self-hosted runner"
     required: false
     default: "."
-  pid-file:
-    description: "PID file used for the running FastAPI process"
+  service-name:
+    description: "Systemd service name for the FastAPI app"
     required: false
-    default: "fastapi.pid"
+    default: "fintechbackend"
   host:
     description: "FastAPI host binding"
     required: false
@@ -43,7 +43,7 @@ runs:
       shell: bash
       env:
         APP_DIRECTORY: ${{ inputs.app-directory }}
-        PID_FILE: ${{ inputs.pid-file }}
+        SERVICE_NAME: ${{ inputs.service-name }}
         APP_HOST: ${{ inputs.host }}
         APP_PORT: ${{ inputs.port }}
         HEALTH_URL: ${{ inputs.health-url }}
@@ -54,6 +54,8 @@ runs:
       run: |
         set -euo pipefail
         cd "$APP_DIRECTORY"
+        APP_USER="$(whoami)"
+        UV_BIN="$(command -v uv)"
 
         DATABASE_URL_VALUE="${DATABASE_URL_INPUT:-sqlite:///./finance.db}"
         ALGORITHM_VALUE="${ALGORITHM_INPUT:-HS256}"
@@ -70,17 +72,31 @@ runs:
 
         uv sync --frozen
 
-        nohup bash -lc '
-          set -a
-          source .deployment.env
-          set +a
-          uv run uvicorn app.main:app --host '"$APP_HOST"' --port '"$APP_PORT"'
-        ' > logs/deploy.log 2>&1 &
+        sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" > /dev/null <<EOF
+        [Unit]
+        Description=FintechBackend FastAPI Service
+        After=network.target
 
-        echo $! > "$PID_FILE"
-        echo "Started FastAPI with PID $(cat "$PID_FILE")"
+        [Service]
+        Type=simple
+        User=${APP_USER}
+        WorkingDirectory=${APP_DIRECTORY}
+        EnvironmentFile=${APP_DIRECTORY}/.deployment.env
+        ExecStart=${UV_BIN} run uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}
+        Restart=always
+        RestartSec=5
+        StandardOutput=append:${APP_DIRECTORY}/logs/systemd.log
+        StandardError=append:${APP_DIRECTORY}/logs/systemd.log
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+
+        sudo systemctl daemon-reload
+        sudo systemctl enable "${SERVICE_NAME}.service"
+        sudo systemctl restart "${SERVICE_NAME}.service"
 
         sleep 8
 
         curl --fail --silent --show-error "$HEALTH_URL"
-        pgrep -af "uvicorn app.main:app"
+        sudo systemctl --no-pager --full status "${SERVICE_NAME}.service"

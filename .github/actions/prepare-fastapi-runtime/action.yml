@@ -1,36 +1,31 @@
 name: "Prepare FastAPI Runtime"
-description: "Stop the previous FastAPI process and prepare runtime folders"
+description: "Stop the existing FastAPI systemd service and prepare runtime folders"
 inputs:
   app-directory:
     description: "Application directory on the self-hosted runner"
     required: false
     default: "."
-  pid-file:
-    description: "PID file used for the running FastAPI process"
+  service-name:
+    description: "Systemd service name for the FastAPI app"
     required: false
-    default: "fastapi.pid"
+    default: "fintechbackend"
 runs:
   using: "composite"
   steps:
-    - name: Stop Existing FastAPI Process
+    - name: Stop Existing FastAPI Service
       shell: bash
       env:
         APP_DIRECTORY: ${{ inputs.app-directory }}
-        PID_FILE: ${{ inputs.pid-file }}
+        SERVICE_NAME: ${{ inputs.service-name }}
       run: |
         set -euo pipefail
         cd "$APP_DIRECTORY"
 
         mkdir -p logs
 
-        if [ -f "$PID_FILE" ]; then
-          EXISTING_PID="$(cat "$PID_FILE")"
-          if kill -0 "$EXISTING_PID" 2>/dev/null; then
-            echo "Stopping FastAPI process $EXISTING_PID"
-            kill "$EXISTING_PID"
-            sleep 3
-          fi
-          rm -f "$PID_FILE"
+        if sudo systemctl list-unit-files | grep -q "^${SERVICE_NAME}\.service"; then
+          echo "Stopping service ${SERVICE_NAME}.service"
+          sudo systemctl stop "${SERVICE_NAME}.service" || true
         fi
 
         pkill -f "uvicorn app.main:app" 2>/dev/null || true
