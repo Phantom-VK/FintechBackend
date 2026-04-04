@@ -16,10 +16,10 @@ The backend supports:
 ## Main Entry Points
 
 - Application bootstrap: [app/main.py](../app/main.py)
-- App configuration: [app/config.py](../app/config.py)
-- Database setup: [app/database.py](../app/database.py)
-- Logging setup: [app/logging_config.py](../app/logging_config.py)
-- Exception classes: [app/exceptions.py](../app/exceptions.py)
+- App configuration: [app/core/config.py](../app/core/config.py)
+- Database setup: [app/db/session.py](../app/db/session.py)
+- Logging setup: [app/core/logging_config.py](../app/core/logging_config.py)
+- Exception classes: [app/core/exceptions.py](../app/core/exceptions.py)
 
 ## Role Model
 
@@ -49,12 +49,16 @@ Role definitions live in [app/models/user.py](../app/models/user.py).
   - request and response contracts
 - Dependencies: [app/dependencies/](../app/dependencies)
   - auth and role-based reusable dependencies
+- Core: [app/core/](../app/core)
+  - configuration, security, logging, middleware, and exceptions
+- DB: [app/db/](../app/db)
+  - database engine, session, and base model setup
 
 ## Logging and Exceptions
 
-Structured JSON logging is configured in [app/logging_config.py](../app/logging_config.py) and request context binding is handled by [app/middleware.py](../app/middleware.py).
+Structured JSON logging is configured in [app/core/logging_config.py](../app/core/logging_config.py) and request context binding is handled by [app/core/middleware.py](../app/core/middleware.py).
 
-Application exceptions are defined in [app/exceptions.py](../app/exceptions.py) and handled centrally in [app/main.py](../app/main.py).
+Application exceptions are defined in [app/core/exceptions.py](../app/core/exceptions.py) and handled centrally in [app/main.py](../app/main.py).
 
 ## Related Docs
 

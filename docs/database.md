@@ -1,6 +1,6 @@
 # Database
 
-Database configuration lives in [app/config.py](../app/config.py) and [app/database.py](../app/database.py).
+Database configuration lives in [app/core/config.py](../app/core/config.py) and [app/db/session.py](../app/db/session.py).
 
 ## Current Database
 
@@ -8,11 +8,11 @@ The project currently uses SQLite through the local file [finance.db](../finance
 
 Configured database URL:
 
-- [app/config.py](../app/config.py)
+- [app/core/config.py](../app/core/config.py)
 
 Session and engine setup:
 
-- [app/database.py](../app/database.py)
+- [app/db/session.py](../app/db/session.py)
 
 ## Tables
 
@@ -48,6 +48,6 @@ uv run uvicorn app.main:app --reload
 ## Related Files
 
 - App bootstrap: [app/main.py](../app/main.py)
-- DB setup: [app/database.py](../app/database.py)
+- DB setup: [app/db/session.py](../app/db/session.py)
 - User model: [app/models/user.py](../app/models/user.py)
 - Transaction model: [app/models/transaction.py](../app/models/transaction.py)

@@ -6,10 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 import structlog
 
-from app.exceptions import ConflictException, FintechBackendException
+from app.core.exceptions import ConflictException, FintechBackendException
+from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User, UserRole
 from app.schemas.user import UserCreate, UserUpdate
-from app.security import create_access_token, hash_password, verify_password
 
 
 logger = structlog.get_logger(__name__)

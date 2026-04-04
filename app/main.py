@@ -7,11 +7,11 @@ from fastapi.responses import JSONResponse
 import structlog
 
 from app import models as model_registry
-from app.config import APP_TITLE, APP_VERSION
-from app.database import Base, engine
-from app.exceptions import FintechBackendException
-from app.logging_config import setup_logging
-from app.middleware import logging_middleware
+from app.core.config import APP_TITLE, APP_VERSION
+from app.core.exceptions import FintechBackendException
+from app.core.logging_config import setup_logging
+from app.core.middleware import logging_middleware
+from app.db.session import Base, engine
 from app.routers.dashboard import router as dashboard_router
 from app.routers.auth import router as auth_router
 from app.routers.health import router as health_router

@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends
 import structlog
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.core.exceptions import BadRequestException, ResourceNotFoundException
+from app.db.session import get_db
 from app.dependencies.auth import require_roles
-from app.exceptions import BadRequestException, ResourceNotFoundException
 from app.models.user import User, UserRole
 from app.schemas.user import UserOut, UserStatusUpdate, UserUpdate
 from app.services.auth_service import (

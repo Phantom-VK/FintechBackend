@@ -6,7 +6,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 import structlog
 
-from app.exceptions import FintechBackendException
+from app.core.exceptions import FintechBackendException
 from app.models.transaction import FinancialRecord
 from app.schemas.transaction import (
     FinancialRecordCreate,

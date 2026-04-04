@@ -8,10 +8,10 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.exceptions import AuthenticationException, AuthorizationException
+from app.core.exceptions import AuthenticationException, AuthorizationException
+from app.core.security import decode_access_token
+from app.db.session import get_db
 from app.models.user import User, UserRole
-from app.security import decode_access_token
 from app.services.auth_service import get_user_by_id
 
 

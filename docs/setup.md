@@ -67,5 +67,5 @@ Structured logs are written to the local [logs/](../logs) directory.
 
 Logging source files:
 
-- [app/logging_config.py](../app/logging_config.py)
-- [app/middleware.py](../app/middleware.py)
+- [app/core/logging_config.py](../app/core/logging_config.py)
+- [app/core/middleware.py](../app/core/middleware.py)

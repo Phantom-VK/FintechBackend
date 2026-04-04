@@ -5,7 +5,7 @@ import unittest
 
 import httpx
 
-from app.database import Base, get_db
+from app.db.session import Base, get_db
 from app.main import app
 from tests.test_support import build_async_db_override, build_test_engine
 

@@ -6,15 +6,16 @@ import unittest
 
 from fastapi.security import HTTPAuthorizationCredentials
 
-from app.database import Base
-from app.dependencies.auth import get_current_user, require_roles
-from app.exceptions import (
+from app.core.exceptions import (
     AuthenticationException,
     AuthorizationException,
     BadRequestException,
     ConflictException,
     ResourceNotFoundException,
 )
+from app.core.security import create_access_token, decode_access_token
+from app.db.session import Base
+from app.dependencies.auth import get_current_user, require_roles
 from app.models.transaction import RecordType
 from app.models.user import UserRole
 from app.routers.auth import get_logged_in_user, login_user, register_user
@@ -49,7 +50,6 @@ from app.schemas.transaction import (
     TransactionSortField,
 )
 from app.schemas.user import UserCreate, UserLogin, UserStatusUpdate, UserUpdate
-from app.security import create_access_token, decode_access_token
 from tests.test_support import build_test_engine
 
 

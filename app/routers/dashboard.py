@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 import structlog
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.db.session import get_db
 from app.dependencies.auth import require_roles
 from app.models.user import User, UserRole
 from app.schemas.dashboard import (

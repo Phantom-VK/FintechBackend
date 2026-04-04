@@ -7,9 +7,13 @@ from fastapi import APIRouter, Depends, status
 import structlog
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.core.exceptions import (
+    AuthenticationException,
+    AuthorizationException,
+    ConflictException,
+)
+from app.db.session import get_db
 from app.dependencies.auth import get_current_user
-from app.exceptions import AuthenticationException, AuthorizationException, ConflictException
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserLogin, UserOut
 from app.services.auth_service import (

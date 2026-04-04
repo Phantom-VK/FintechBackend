@@ -7,7 +7,7 @@ from enum import Enum
 from sqlalchemy import Boolean, Date, DateTime, Enum as SqlEnum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from app.db.session import Base
 
 
 class RecordType(str, Enum):

@@ -5,7 +5,7 @@ import structlog
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.db.session import get_db
 
 router = APIRouter(tags=["health"])
 logger = structlog.get_logger(__name__)

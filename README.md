@@ -26,10 +26,10 @@ Main application entrypoint: [app/main.py](app/main.py)
 
 - Python 3.12.3
 - FastAPI: [pyproject.toml](pyproject.toml)
-- SQLAlchemy ORM: [app/database.py](app/database.py)
-- SQLite database: [app/config.py](app/config.py)
-- JWT auth and password hashing: [app/security.py](app/security.py)
-- Structured JSON logging: [app/logging_config.py](app/logging_config.py)
+- SQLAlchemy ORM: [app/db/session.py](app/db/session.py)
+- SQLite database: [app/core/config.py](app/core/config.py)
+- JWT auth and password hashing: [app/core/security.py](app/core/security.py)
+- Structured JSON logging: [app/core/logging_config.py](app/core/logging_config.py)
 
 ## Documentation
 
@@ -47,6 +47,8 @@ Main application entrypoint: [app/main.py](app/main.py)
 - Models: [app/models/](app/models)
 - Schemas: [app/schemas/](app/schemas)
 - Dependencies: [app/dependencies/](app/dependencies)
+- Core infrastructure: [app/core/](app/core)
+- Database session: [app/db/](app/db)
 - Static assets: [static/](static)
 - Automated tests: [tests/](tests)
 
