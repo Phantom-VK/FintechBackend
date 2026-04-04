@@ -1,0 +1,44 @@
+name: "Prepare Docker Host"
+description: "Stop legacy app processes and clear the existing FastAPI container before deploy"
+inputs:
+  app-directory:
+    description: "Application directory on the self-hosted runner"
+    required: false
+    default: "."
+  container-name:
+    description: "Docker container name for the FastAPI app"
+    required: false
+    default: "fintechbackend"
+  service-name:
+    description: "Legacy systemd service name to stop if it exists"
+    required: false
+    default: "fintechbackend"
+runs:
+  using: "composite"
+  steps:
+    - name: Prepare EC2 Docker Runtime
+      shell: bash
+      env:
+        APP_DIRECTORY: ${{ inputs.app-directory }}
+        CONTAINER_NAME: ${{ inputs.container-name }}
+        SERVICE_NAME: ${{ inputs.service-name }}
+      run: |
+        set -euo pipefail
+        cd "$APP_DIRECTORY"
+
+        mkdir -p logs data
+
+        if sudo systemctl list-unit-files | grep -q "^${SERVICE_NAME}\.service"; then
+          echo "Stopping legacy service ${SERVICE_NAME}.service"
+          sudo systemctl stop "${SERVICE_NAME}.service" || true
+          sudo systemctl disable "${SERVICE_NAME}.service" || true
+        fi
+
+        pkill -f "uvicorn app.main:app" 2>/dev/null || true
+
+        if docker ps -a --format '{{.Names}}' | grep -Fxq "$CONTAINER_NAME"; then
+          echo "Removing existing container ${CONTAINER_NAME}"
+          docker rm -f "$CONTAINER_NAME"
+        fi
+
+        echo "Docker host preparation complete"

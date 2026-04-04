@@ -1,0 +1,85 @@
+name: "Deploy Docker Container To EC2"
+description: "Pull the Docker image from ECR and run the FastAPI container on EC2"
+inputs:
+  app-directory:
+    description: "Application directory on the self-hosted runner"
+    required: false
+    default: "."
+  container-name:
+    description: "Docker container name"
+    required: false
+    default: "fintechbackend"
+  image-uri:
+    description: "Docker image URI to run"
+    required: true
+  host-port:
+    description: "Host port exposed on EC2"
+    required: false
+    default: "8000"
+  container-port:
+    description: "Container port used by uvicorn"
+    required: false
+    default: "8000"
+  health-url:
+    description: "Health check URL for the deployed app"
+    required: false
+    default: "http://127.0.0.1:8000/health"
+  database-url:
+    description: "Database URL used by the app"
+    required: false
+    default: ""
+  secret-key:
+    description: "JWT secret key used by the app"
+    required: true
+  algorithm:
+    description: "JWT signing algorithm"
+    required: false
+    default: "HS256"
+  access-token-expire-minutes:
+    description: "Access token lifetime in minutes"
+    required: false
+    default: "60"
+runs:
+  using: "composite"
+  steps:
+    - name: Pull And Run Container
+      shell: bash
+      env:
+        APP_DIRECTORY: ${{ inputs.app-directory }}
+        CONTAINER_NAME: ${{ inputs.container-name }}
+        IMAGE_URI: ${{ inputs.image-uri }}
+        HOST_PORT: ${{ inputs.host-port }}
+        CONTAINER_PORT: ${{ inputs.container-port }}
+        HEALTH_URL: ${{ inputs.health-url }}
+        DATABASE_URL_INPUT: ${{ inputs.database-url }}
+        SECRET_KEY_INPUT: ${{ inputs.secret-key }}
+        ALGORITHM_INPUT: ${{ inputs.algorithm }}
+        ACCESS_TOKEN_EXPIRE_MINUTES_INPUT: ${{ inputs.access-token-expire-minutes }}
+      run: |
+        set -euo pipefail
+        cd "$APP_DIRECTORY"
+
+        DATABASE_URL_VALUE="${DATABASE_URL_INPUT:-sqlite:////app/data/finance.db}"
+        ALGORITHM_VALUE="${ALGORITHM_INPUT:-HS256}"
+        ACCESS_TOKEN_EXPIRE_MINUTES_VALUE="${ACCESS_TOKEN_EXPIRE_MINUTES_INPUT:-60}"
+
+        mkdir -p logs data
+
+        docker pull "$IMAGE_URI"
+
+        docker run -d \
+          --name "$CONTAINER_NAME" \
+          --restart always \
+          -p "${HOST_PORT}:${CONTAINER_PORT}" \
+          -e DATABASE_URL="${DATABASE_URL_VALUE}" \
+          -e SECRET_KEY="${SECRET_KEY_INPUT}" \
+          -e ALGORITHM="${ALGORITHM_VALUE}" \
+          -e ACCESS_TOKEN_EXPIRE_MINUTES="${ACCESS_TOKEN_EXPIRE_MINUTES_VALUE}" \
+          -v "${APP_DIRECTORY}/data:/app/data" \
+          -v "${APP_DIRECTORY}/logs:/app/logs" \
+          "$IMAGE_URI"
+
+        sleep 8
+
+        curl --fail --silent --show-error --max-time 10 "$HEALTH_URL"
+        docker ps --filter "name=${CONTAINER_NAME}"
