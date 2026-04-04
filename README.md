@@ -28,6 +28,18 @@ Bootstrap rules:
 - `analyst` can only be assigned later by an `admin`
 - On the current AWS deployment, no user has been created by us yet, so the first successful registration there will become `admin`
 
+## Current Deployed Instance
+
+Current public deployment base URL:
+
+- `http://13.233.155.129:8000`
+
+Useful endpoints:
+
+- Swagger UI: http://13.233.155.129:8000/docs
+- Root endpoint: http://13.233.155.129:8000/
+- Health endpoint: http://13.233.155.129:8000/health
+
 Main application entrypoint: [app/main.py](app/main.py)
 
 ## Tech Stack
@@ -62,6 +74,26 @@ Main application entrypoint: [app/main.py](app/main.py)
 
 ## Quick Start
 
+Install `uv` first if it is not already available on your machine.
+
+macOS and Linux:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Then verify:
+
+```bash
+uv --version
+```
+
 Install dependencies:
 
 ```bash
@@ -79,24 +111,5 @@ Open:
 - Swagger UI: `http://127.0.0.1:8000/docs`
 - Root endpoint: `http://127.0.0.1:8000/`
 - Health endpoint: `http://127.0.0.1:8000/health`
-
-## Current Deployed Instance
-
-Current public deployment base URL:
-
-- `http://13.233.155.129:8000`
-
-Useful endpoints:
-
-- Swagger UI: `http://13.233.155.129:8000/docs`
-- Root endpoint: `http://13.233.155.129:8000/`
-- Health endpoint: `http://13.233.155.129:8000/health`
-
-Important bootstrap note for the deployed instance:
-
-- No user has been pre-created by us
-- The first successful registration on the deployed app becomes `admin`
-- Every later self-registered user becomes `viewer`
-- `analyst` must be assigned later by an `admin`
 
 For full setup, test, and reset instructions, use [docs/setup.md](docs/setup.md).

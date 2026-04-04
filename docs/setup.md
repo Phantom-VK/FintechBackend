@@ -7,6 +7,28 @@
 
 Project dependency definition: [pyproject.toml](../pyproject.toml)
 
+## Install uv
+
+Official install guide: https://docs.astral.sh/uv/getting-started/installation/
+
+macOS and Linux:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Verify the installation:
+
+```bash
+uv --version
+```
+
 ## Install Dependencies
 
 ```bash
