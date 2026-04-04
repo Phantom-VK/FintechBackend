@@ -55,7 +55,7 @@ runs:
         set -euo pipefail
         cd "$APP_DIRECTORY"
         APP_USER="$(whoami)"
-        UV_BIN="$(command -v uv)"
+        VENV_PYTHON="${APP_DIRECTORY}/.venv/bin/python"
 
         DATABASE_URL_VALUE="${DATABASE_URL_INPUT:-sqlite:///./finance.db}"
         ALGORITHM_VALUE="${ALGORITHM_INPUT:-HS256}"
@@ -72,6 +72,11 @@ runs:
 
         uv sync --frozen
 
+        if [ ! -x "$VENV_PYTHON" ]; then
+          echo "Virtualenv python not found at $VENV_PYTHON"
+          exit 1
+        fi
+
         sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" > /dev/null <<EOF
         [Unit]
         Description=FintechBackend FastAPI Service
@@ -82,7 +87,7 @@ runs:
         User=${APP_USER}
         WorkingDirectory=${APP_DIRECTORY}
         EnvironmentFile=${APP_DIRECTORY}/.deployment.env
-        ExecStart=${UV_BIN} run uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}
+        ExecStart=${VENV_PYTHON} -m uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}
         Restart=always
         RestartSec=5
         StandardOutput=append:${APP_DIRECTORY}/logs/systemd.log
@@ -98,5 +103,5 @@ runs:
 
         sleep 8
 
-        curl --fail --silent --show-error "$HEALTH_URL"
+        curl --fail --silent --show-error --max-time 10 "$HEALTH_URL"
         sudo systemctl --no-pager --full status "${SERVICE_NAME}.service"
