@@ -1,0 +1,86 @@
+name: "Deploy FastAPI to EC2"
+description: "Install dependencies and start the FastAPI app on a self-hosted EC2 runner"
+inputs:
+  app-directory:
+    description: "Application directory on the self-hosted runner"
+    required: false
+    default: "."
+  pid-file:
+    description: "PID file used for the running FastAPI process"
+    required: false
+    default: "fastapi.pid"
+  host:
+    description: "FastAPI host binding"
+    required: false
+    default: "0.0.0.0"
+  port:
+    description: "FastAPI port"
+    required: false
+    default: "8000"
+  health-url:
+    description: "Health check URL for the deployed app"
+    required: false
+    default: "http://127.0.0.1:8000/health"
+  database-url:
+    description: "Database URL used by the app"
+    required: false
+    default: ""
+  secret-key:
+    description: "JWT secret key used by the app"
+    required: true
+  algorithm:
+    description: "JWT signing algorithm"
+    required: false
+    default: "HS256"
+  access-token-expire-minutes:
+    description: "Access token lifetime in minutes"
+    required: false
+    default: "60"
+runs:
+  using: "composite"
+  steps:
+    - name: Install And Start FastAPI
+      shell: bash
+      env:
+        APP_DIRECTORY: ${{ inputs.app-directory }}
+        PID_FILE: ${{ inputs.pid-file }}
+        APP_HOST: ${{ inputs.host }}
+        APP_PORT: ${{ inputs.port }}
+        HEALTH_URL: ${{ inputs.health-url }}
+        DATABASE_URL_INPUT: ${{ inputs.database-url }}
+        SECRET_KEY_INPUT: ${{ inputs.secret-key }}
+        ALGORITHM_INPUT: ${{ inputs.algorithm }}
+        ACCESS_TOKEN_EXPIRE_MINUTES_INPUT: ${{ inputs.access-token-expire-minutes }}
+      run: |
+        set -euo pipefail
+        cd "$APP_DIRECTORY"
+
+        DATABASE_URL_VALUE="${DATABASE_URL_INPUT:-sqlite:///./finance.db}"
+        ALGORITHM_VALUE="${ALGORITHM_INPUT:-HS256}"
+        ACCESS_TOKEN_EXPIRE_MINUTES_VALUE="${ACCESS_TOKEN_EXPIRE_MINUTES_INPUT:-60}"
+
+        cat > .deployment.env <<EOF
+        DATABASE_URL=${DATABASE_URL_VALUE}
+        SECRET_KEY=${SECRET_KEY_INPUT}
+        ALGORITHM=${ALGORITHM_VALUE}
+        ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES_VALUE}
+        EOF
+
+        mkdir -p logs
+
+        uv sync --frozen
+
+        nohup bash -lc '
+          set -a
+          source .deployment.env
+          set +a
+          uv run uvicorn app.main:app --host '"$APP_HOST"' --port '"$APP_PORT"'
+        ' > logs/deploy.log 2>&1 &
+
+        echo $! > "$PID_FILE"
+        echo "Started FastAPI with PID $(cat "$PID_FILE")"
+
+        sleep 8
+
+        curl --fail --silent --show-error "$HEALTH_URL"
+        pgrep -af "uvicorn app.main:app"

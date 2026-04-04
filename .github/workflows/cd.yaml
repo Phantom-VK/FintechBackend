@@ -1,0 +1,53 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+      - ".gitignore"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy To EC2
+    runs-on: self-hosted
+
+    env:
+      APP_DIRECTORY: ${{ github.workspace }}
+      APP_PORT: "8000"
+      APP_HOST: "0.0.0.0"
+      APP_HEALTH_URL: "http://127.0.0.1:8000/health"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: python -m pip install uv
+
+      - name: Prepare FastAPI Runtime
+        uses: ./.github/actions/prepare-fastapi-runtime
+        with:
+          app-directory: ${{ env.APP_DIRECTORY }}
+          pid-file: fastapi.pid
+
+      - name: Deploy FastAPI App
+        uses: ./.github/actions/deploy-ec2
+        with:
+          app-directory: ${{ env.APP_DIRECTORY }}
+          pid-file: fastapi.pid
+          host: ${{ env.APP_HOST }}
+          port: ${{ env.APP_PORT }}
+          health-url: ${{ env.APP_HEALTH_URL }}
+          database-url: ${{ secrets.DATABASE_URL }}
+          secret-key: ${{ secrets.SECRET_KEY }}
+          algorithm: HS256
+          access-token-expire-minutes: "60"
